@@ -18,23 +18,21 @@
 
                   <div slot="body" class="row">
 
-                    <div class="form-group col-12">
-                      <label for="">Observacion</label>
-                      <input type="text" v-model="model.nombre" class="form-control" id="">
-                    </div>
 
 
                     <!-- Nuevo campo de entrada para el cliente con funcionalidad de búsqueda -->
-    <div class="form-group col-12">
-      <label for="">Cliente</label>
-      <input type="text" v-model="searchQuery" @input="searchClients" @keyup.enter="autocompleteFirstResult" class="form-control" id="">
-      <!-- Mostrar coincidencias debajo del campo de búsqueda -->
-      <div v-if="searchResults.length" class="search-results">
-        <ul>
-          <li v-for="client in searchResults" @click="selectClient(client)" @mouseover="highlightClient(client)">{{ client.nombre }}</li>
-        </ul>
-      </div>
-    </div>
+                    <div class="form-group col-12">
+                      <label for="">Cliente</label>
+                      <input type="text" v-model="searchQuery" @input="searchClients"
+                        @keyup.enter="autocompleteFirstResult" class="form-control" id="">
+                      <!-- Mostrar coincidencias debajo del campo de búsqueda -->
+                      <div v-if="searchResults.length" class="search-results">
+                        <ul>
+                          <li v-for="client in searchResults" @click="selectClient(client)"
+                            @mouseover="highlightClient(client)">{{ client.nombre }}</li>
+                        </ul>
+                      </div>
+                    </div>
 
 
                     <div class="form-group col-12">
@@ -54,7 +52,10 @@
                         <option v-for="m in categorias" :value="m.id">{{ m.nombre }}</option>
                       </select>
                     </div>
-
+                    <div class="form-group col-12">
+                      <label for="">Fecha inicial</label>
+                      <input type="date" v-model="model.ini_fecha" class="form-control" :min="minFecha">
+                    </div>
 
                     <div class="form-group col-12">
                       <label for="">Tiempo</label>
@@ -64,22 +65,20 @@
                     </div>
 
                     <div class="form-group col-12">
-                      <label for="">Estado Pago</label>
-                      <input type="text" v-model="model.estado_pago" class="form-control" :min="estado_pago">
-                    </div>
-
-
-                    <div class="form-group col-12">
-                      <label for="">Fecha inicial</label>
-                      <input type="date" v-model="model.ini_fecha" class="form-control" :min="minFecha">
-                    </div>
-
-                    <div class="form-group col-12">
                       <label for="">Fecha final</label>
                       <input type="date" v-model="model.fin_fecha" class="form-control" :min="model.ini_fecha" disabled>
                     </div>
 
 
+                    <div class="form-group col-12">
+                      <label for="">Llaves Extras</label>
+                      <input type="text" v-model="model.estado_pago" class="form-control" id="">
+                    </div>
+
+                    <div class="form-group col-12">
+                      <label for="">Multas</label>
+                      <input type="text" v-model="model.nombre" class="form-control" id="">
+                    </div>
 
                     <div class="form-group col-12">
                       <label for="">precio</label>
@@ -87,14 +86,6 @@
                         <option v-for="m in precios" :value="m.id">{{ m.precio }}</option>
                       </select>
                     </div>
-
-
-
-
-
-
-
-
                   </div>
                 </CrudCreate>
               </div>
@@ -120,21 +111,27 @@ export default {
         ini_fecha: '',
         fin_fecha: '',
         estado: '',
+        cajero_id: '',// Asignar cajero_id al modelo
       },
       apiUrl: 'alquileres',
       page: 'alquileres',
       modulo: 'AGBC',
       load: true,
       searchQuery: '', // Añade esta línea
-    searchResults: [], // Añade esta línea
+      searchResults: [], // Añade esta línea
       clientes: [],
       casillas: [],
       categorias: [],
       precios: [],
+      user: {   // Asignar cajero_id al modelo
+        cajero: []// LLAMAR DATO DEL CAJERO
+      },// Asignar cajero_id al modelo
     };
   },
 
   methods: {
+
+
 
     async searchClients() {
       // Realizar la búsqueda de clientes basada en la consulta de búsqueda
@@ -155,7 +152,7 @@ export default {
       this.searchResults = [];
     },
 
-   autocompleteFirstResult(event) {
+    autocompleteFirstResult(event) {
       // Verificar si se presionó la tecla Enter
       if (event.key === 'Enter' && this.searchResults.length > 0) {
         // Autocompletar con el primer resultado de la lista
@@ -183,6 +180,33 @@ export default {
       if (selectedCasilla) {
         // Asigna la categoría de la casilla seleccionada al modelo
         this.model.categoria_id = selectedCasilla.categoria_id;
+
+        // Filtra los precios según la categoría seleccionada (tamaño)
+        this.precios = this.precios.filter(precio => precio.categoria_id === this.model.categoria_id);
+
+        // Filtra los tiempos según la categoría seleccionada (tamaño)
+        this.tiemposFiltrados = this.precios.map(precio => precio.tiempo);
+      }
+    },
+
+
+    // Nuevo método para actualizar los tiempos basados en el tamaño seleccionado
+    updateTiemposBySize() {
+      if (this.model.categoria_id === 'ID_TU_TAMAÑO_PEQUEÑA') {
+        // Actualizar tiemposFiltrados para el tamaño pequeño
+        this.tiemposFiltrados = this.precios.filter(precio => precio.tiempo.includes('Pequeña')).map(precio => precio.tiempo);
+      } else if (this.model.categoria_id === 'ID_TU_TAMAÑO_MEDIANA') {
+        // Actualizar tiemposFiltrados para el tamaño mediano
+        this.tiemposFiltrados = this.precios.filter(precio => precio.tiempo.includes('Mediana')).map(precio => precio.tiempo);
+      } else if (this.model.categoria_id === 'ID_TU_TAMAÑO_GABETA') {
+        // Actualizar tiemposFiltrados para el tamaño de gabeta
+        this.tiemposFiltrados = this.precios.filter(precio => precio.tiempo.includes('Gabeta')).map(precio => precio.tiempo);
+      } else if (this.model.categoria_id === 'ID_TU_TAMAÑO_CAJON') {
+        // Actualizar tiemposFiltrados para el tamaño de cajón
+        this.tiemposFiltrados = this.precios.filter(precio => precio.tiempo.includes('Cajon')).map(precio => precio.tiempo);
+      } else {
+        // En caso de otro tamaño o selección no válida, muestra todos los tiempos
+        this.tiemposFiltrados = this.precios.map(precio => precio.tiempo);
       }
     },
     async GET_DATA(path) {
@@ -241,6 +265,9 @@ export default {
   },
   mounted() {
     this.$nextTick(async () => {
+      let user = localStorage.getItem('userAuth')  // Asignar cajero_id al modelo
+      this.user = JSON.parse(user)                // Asignar cajero_id al modelo
+      this.model.cajero_id = this.user.cajero.id; // Asignar cajero_id al modelo
       try {
         await Promise.all([this.GET_DATA('clientes'), this.GET_DATA('casillas'), this.GET_DATA('categorias'), this.GET_DATA('precios')]).then((v) => {
           this.clientes = v[0];
@@ -271,6 +298,7 @@ export default {
         const day = String(today.getDate()).padStart(2, '0');
         const formattedDate = `${year}-${month}-${day}`;
         this.model.ini_fecha = formattedDate;
+        // this.model.ini_fecha = '2023-01-01';
 
         // Llamar al método updateFechaTermino cuando se cambie el valor de model.precio_id
         this.$watch('model.precio_id', this.updateFechaTermino);
