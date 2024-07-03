@@ -112,7 +112,8 @@
 </style>
 
 <script>
-const anime = require('animejs'); // Change from import to require
+// import anime from 'animejs/lib/anime.es.js';
+const anime = require('animejs/lib/anime.js'); // Usando la versión CommonJS de anime.js
 
 export default {
   data() {
@@ -159,7 +160,7 @@ export default {
     },
     async Login() {
       try {
-        const res = await this.$api.$post('login3', this.model);
+        const res = await this.$api.$post('login', this.model);
         let user = res
         if (user.hasOwnProperty('errors')) {
           this.$swal
