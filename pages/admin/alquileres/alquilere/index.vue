@@ -1,11 +1,10 @@
-REPORTES GLOBAL
-
 <template>
   <div>
     <JcLoader :load="load"></JcLoader>
     <AdminTemplate :page="page" :modulo="modulo">
       <div slot="body">
         <div class="row justify-content-end">
+          <div class="col-2"></div>
           <div class="contenedor">
             <div class="busqueda">
               <input type="text" v-model="searchTerm" class="form-control" placeholder="Buscar por nombre"
@@ -14,7 +13,7 @@ REPORTES GLOBAL
           </div>
           <!-- Botón para abrir el modal de casillas por vencer -->
           <div class="btn-group mr-2">
-            <button class="btn btn-info" @click="mostrarCasillasPorVencer">
+            <button class="btn btn-info" @click="generarReporteFechasPorVencer">
               <i class="fas fa-exclamation-triangle"></i> Casillas por Vencer
             </button>
           </div>
@@ -51,19 +50,19 @@ REPORTES GLOBAL
 
                     <!-- Botón para generar el reporte de casillas vencidas entre las fechas seleccionadas -->
                     <button @click="generarReporteCompletoFechas" class="btn btn-fx btn-info">
-                      reporte general
+                      Reporte General
                     </button>
                     <button @click="generarReporteCasillasPequenasFechas" class="btn btn-fx btn-info">
-                      reporte Casillas Pequeñas
+                      Reporte Casillas Pequeñas
                     </button>
                     <button @click="generarReporteCasillasMedianasFechas" class="btn btn-fx btn-info">
-                      reporte Casillas Medianas
+                      Reporte Casillas Medianas
                     </button>
                     <button @click="generarReporteGabetasFechas" class="btn btn-fx btn-info">
-                      reporte Casillas Gabetas
+                      Reporte Casillas Gabetas
                     </button>
                     <button @click="generarReporteCajonFechas" class="btn btn-fx btn-info">
-                      reporte Casillas Cajones
+                      Reporte Casillas Cajones
                     </button>
 
                   </div>
@@ -128,12 +127,12 @@ REPORTES GLOBAL
               <div class="card-body">
                 <table class="table">
                   <thead>
-                    <th class="py-0 px-1">#</th>
+                    <th class="py-0 px-1"><input type="checkbox" @click="toggleSelectAll" /></th>
                     <th class="py-0 px-1">Cliente</th>
                     <th class="py-0 px-1">Cajero</th>
                     <th class="py-0 px-1">Telefono</th>
                     <th class="py-0 px-1">Casilla</th>
-                    <th class="py-0 px-1">Carnet</th>
+                    <th class="py-0 px-1">CI</th>
                     <th class="py-0 px-1">SECCION</th>
                     <th class="py-0 px-1">Precio</th>
                     <th class="py-0 px-1">Tamaño</th>
@@ -144,12 +143,11 @@ REPORTES GLOBAL
                     <th class="py-0 px-1">Dia Pago</th>
                     <th class="py-0 px-1">Tiempo Inicio</th>
                     <th class="py-0 px-1">Tiempo Fin</th>
-                    <th class="py-0 px-1">Estado</th>
                     <th class="py-0 px-1"></th>
                   </thead>
                   <tbody>
                     <tr v-for="(m, i) in paginatedList" :key="m.id">
-                      <td class="py-0 px-1">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                      <td class="py-0 px-1"><input type="checkbox" v-model="selectedIds" :value="m.id" /></td>
                       <td class="py-0 px-1">{{ m.cliente.nombre }}</td>
                       <td class="py-0 px-1">{{ m.cajero ? m.cajero.nombre : 'S/N' }}</td>
                       <td class="py-0 px-1">{{ m.cliente.telefono }}</td>
@@ -189,6 +187,20 @@ REPORTES GLOBAL
                   <button @click="nextPage" :disabled="currentPage === totalPages" class="btn btn-primary">
                     &raquo;
                   </button>
+                  <div class="d-flex justify-content-between">
+                    <div class="btn-group">
+                      <button class="btn btn-warning" @click="updateSelected">
+                        <i class="fas fa-edit"></i> Mandar mensajes
+                      </button>
+                    </div>
+                    <!-- Botón para cambiar todas las casillas con correspondencia a ocupadas -->
+                    <div class="btn-group mr-2">
+                      <button class="btn btn-warning" @click="updateAllToOcupadas">
+                        <i class="fas fa-exclamation-triangle"></i> Cambiar Todas a Ocupadas
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
               </div>
             </div>
@@ -202,6 +214,7 @@ REPORTES GLOBAL
 <script>
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import Swal from 'sweetalert2';
 
 export default {
   name: "IndexPage",
@@ -224,14 +237,20 @@ export default {
       fechaInicio: '',
       fechaFin: '',
       alertShown: false,
+      dropdownVisible: false,
       casillasPorVencer: [],
+      selectedIds: [], // Para almacenar los IDs seleccionados
+      cajero_id: '', // Asignar cajero_id al modelo
+      user: { // Asignar cajero_id al modelo
+        cajero: [] // LLAMAR DATO DEL CAJERO
+      }, // Asignar cajero_id al modelo
     };
   },
   computed: {
     paginatedList() {
       const start = (this.currentPage - 1) * this.pageSize;
       const end = start + this.pageSize;
-      return this.filteredList.slice(start, end);
+      return this.filteredList.sort((a, b) => b.id - a.id).slice(start, end);
     },
     totalPages() {
       return Math.ceil(this.filteredList.length / this.pageSize);
@@ -267,11 +286,108 @@ export default {
 
       return pages;
     }
+
   },
+
   methods: {
+    async updateAllToOcupadas() {
+      this.load = true;
+
+      try {
+        const response = await this.$api.$post('update-all-to-ocupadas');
+
+        if (response.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: response.message,
+          });
+          // Recargar los datos después de la actualización
+          await this.GET_DATA(this.apiUrl).then(v => {
+            this.list = v;
+            this.filteredList = this.list;
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: response.message,
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Hubo un error al actualizar los registros.',
+        });
+      } finally {
+        this.load = false;
+      }
+    },
+    toggleSelectAll(event) {
+      this.selectedIds = event.target.checked ? this.paginatedList.map(m => m.id) : [];
+    },
+    async updateSelected() {
+      if (this.selectedIds.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Atención',
+          text: 'Por favor, seleccione al menos un registro.',
+        });
+        return;
+      }
+
+      this.load = true;
+
+      try {
+        const response = await this.$api.$post('update-casillas-seleccionadas', {
+          ids: this.selectedIds
+        });
+
+        if (response.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: response.message,
+          });
+          // Recargar los datos después de la actualización
+          await this.GET_DATA(this.apiUrl).then(v => {
+            this.list = v;
+            this.filteredList = this.list;
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: response.message,
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Hubo un error al actualizar los registros.',
+        });
+      } finally {
+        this.load = false;
+      }
+    },
+    async GET_DATA(path) {
+      const res = await this.$api.$get(path);
+      return res;
+    },
+    toggleDropdown() {
+      this.dropdownVisible = !this.dropdownVisible;
+    },
+    filtrarPorUsuario() {
+      const userId = this.user.cajero.id;
+      return this.list.filter(alquiler => alquiler.cajero_id === userId);
+    },
     generarReporteCasillasPequenas() {
       // Filtrar los datos por la categoría 'Pequeña'
-      const dataForReport = this.list.filter(alquiler => alquiler.categoria.nombre === 'Pequeña');
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => alquiler.categoria.nombre === 'Pequeña');
 
       // Calcular los totales
       const totalCasillasAlquiladas = dataForReport.length;
@@ -329,12 +445,9 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
-
     generarReporteCasillasCajones() {
       // Filtrar los datos por la categoría 'Cajon'
-      const dataForReport = this.list.filter(alquiler => alquiler.categoria.nombre === 'Cajon');
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => alquiler.categoria.nombre === 'Cajon');
 
       // Calcular los totales
       const totalCasillasAlquiladas = dataForReport.length;
@@ -392,11 +505,9 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
     generarReporteCasillasGabetas() {
       // Filtrar los datos por la categoría 'Gabeta'
-      const dataForReport = this.list.filter(alquiler => alquiler.categoria.nombre === 'Gabeta');
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => alquiler.categoria.nombre === 'Gabeta');
 
       // Calcular los totales
       const totalCasillasAlquiladas = dataForReport.length;
@@ -454,10 +565,9 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
     generarReporteCasillasMedianas() {
       // Filtrar los datos por la categoría 'Mediana'
-      const dataForReport = this.list.filter(alquiler => alquiler.categoria.nombre === 'Mediana');
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => alquiler.categoria.nombre === 'Mediana');
 
       // Calcular los totales
       const totalCasillasAlquiladas = dataForReport.length;
@@ -515,11 +625,9 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
     generarReporteCompleto() {
       // Obtener los datos para el reporte (se utiliza this.list para obtener todos los datos)
-      const dataForReport = this.list;
+      const dataForReport = this.filtrarPorUsuario();
 
       // Calcular los totales
       const totalCasillasAlquiladas = dataForReport.length;
@@ -577,14 +685,7 @@ export default {
       });
 
       window.open(doc.output('bloburl'), '_blank');
-
-      // Guardar el archivo PDF
-      // const fileName = 'reporte_casillas_vigentes.pdf';
-      // doc.save(fileName);
     },
-
-
-    //
     generarReporteFechasPorVencer() {
       // Obtener la fecha actual
       const currentDate = new Date();
@@ -672,7 +773,7 @@ export default {
       const fechaInicio = moment.tz(this.fechaInicio, 'America/La_Paz').startOf('day').toDate();
       const fechaFin = moment.tz(this.fechaFin, 'America/La_Paz').endOf('day').toDate();
 
-      const dataForReport = this.list.filter(alquiler => {
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => {
         const aperturaFecha = moment.tz(alquiler.apertura, 'America/La_Paz').toDate();
         return aperturaFecha >= fechaInicio && aperturaFecha <= fechaFin;
       });
@@ -749,10 +850,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
-
-
     generarReporteCasillasVencidasEntreFechas() {
       if (!this.fechaInicio || !this.fechaFin) {
         alert("Por favor selecciona tanto la fecha de inicio como la fecha de fin.");
@@ -762,7 +859,7 @@ export default {
       const fechaInicio = new Date(this.fechaInicio);
       const fechaFin = new Date(this.fechaFin);
 
-      const casillasVencidas = this.list.filter(alquiler => {
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => {
         const finFecha = new Date(alquiler.fin_fecha);
         return finFecha >= fechaInicio && finFecha <= fechaFin;
       });
@@ -810,7 +907,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
     generarReporteCasillasVigentes() {
       // Obtener la fecha actual
       const currentDate = new Date();
@@ -864,9 +960,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
-
     generarReporteFechasPasadas() {
       const currentDate = new Date(); // Obtener la fecha actual
       const dataForReport = this.list.filter(alquiler => {
@@ -919,7 +1012,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
     generarReporteCasillasPequenasFechas() {
       if (!this.fechaInicio || !this.fechaFin) {
         alert("Por favor selecciona tanto la fecha de inicio como la fecha de fin.");
@@ -933,7 +1025,7 @@ export default {
       const fechaInicio = moment.tz(this.fechaInicio, 'America/La_Paz').startOf('day').toDate();
       const fechaFin = moment.tz(this.fechaFin, 'America/La_Paz').endOf('day').toDate();
 
-      const dataForReport = this.list.filter(alquiler => {
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => {
         const aperturaFecha = moment.tz(alquiler.apertura, 'America/La_Paz').toDate();
         return aperturaFecha >= fechaInicio && aperturaFecha <= fechaFin && alquiler.categoria.nombre === 'Pequeña';
       });
@@ -1014,7 +1106,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
     generarReporteCasillasMedianasFechas() {
       if (!this.fechaInicio || !this.fechaFin) {
         alert("Por favor selecciona tanto la fecha de inicio como la fecha de fin.");
@@ -1028,7 +1119,7 @@ export default {
       const fechaInicio = moment.tz(this.fechaInicio, 'America/La_Paz').startOf('day').toDate();
       const fechaFin = moment.tz(this.fechaFin, 'America/La_Paz').endOf('day').toDate();
 
-      const dataForReport = this.list.filter(alquiler => {
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => {
         const aperturaFecha = moment.tz(alquiler.apertura, 'America/La_Paz').toDate();
         return aperturaFecha >= fechaInicio && aperturaFecha <= fechaFin && alquiler.categoria.nombre === 'Mediana';
       });
@@ -1113,10 +1204,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
-
-
     generarReporteGabetasFechas() {
       if (!this.fechaInicio || !this.fechaFin) {
         alert("Por favor selecciona tanto la fecha de inicio como la fecha de fin.");
@@ -1130,7 +1217,7 @@ export default {
       const fechaInicio = moment.tz(this.fechaInicio, 'America/La_Paz').startOf('day').toDate();
       const fechaFin = moment.tz(this.fechaFin, 'America/La_Paz').endOf('day').toDate();
 
-      const dataForReport = this.list.filter(alquiler => {
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => {
         const aperturaFecha = moment.tz(alquiler.apertura, 'America/La_Paz').toDate();
         return aperturaFecha >= fechaInicio && aperturaFecha <= fechaFin && alquiler.categoria.nombre === 'Gabeta';
       });
@@ -1198,8 +1285,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
     generarReporteCajonFechas() {
       if (!this.fechaInicio || !this.fechaFin) {
         alert("Por favor selecciona tanto la fecha de inicio como la fecha de fin.");
@@ -1213,7 +1298,7 @@ export default {
       const fechaInicio = moment.tz(this.fechaInicio, 'America/La_Paz').startOf('day').toDate();
       const fechaFin = moment.tz(this.fechaFin, 'America/La_Paz').endOf('day').toDate();
 
-      const dataForReport = this.list.filter(alquiler => {
+      const dataForReport = this.filtrarPorUsuario().filter(alquiler => {
         const aperturaFecha = moment.tz(alquiler.apertura, 'America/La_Paz').toDate();
         return aperturaFecha >= fechaInicio && aperturaFecha <= fechaFin && alquiler.categoria.nombre === 'Cajon';
       });
@@ -1281,9 +1366,6 @@ export default {
 
       window.open(doc.output('bloburl'), '_blank');
     },
-
-
-    // Método para generar una alerta cuando una casilla está por vencer en un mes
     generarAlertaCasillasPorVencer() {
       const currentDate = new Date();
       const oneMonthAhead = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate());
@@ -1297,7 +1379,11 @@ export default {
       const numeroCasillasPorVencer = casillasPorVencer.length;
 
       if (numeroCasillasPorVencer > 0) {
-        alert(`Tienes ${numeroCasillasPorVencer} casilla(s) por vencer en un mes.`);
+        Swal.fire({
+          icon: 'warning',
+          title: 'Atención',
+          text: `Tienes ${numeroCasillasPorVencer} casilla(s) por vencer en un mes.`,
+        });
       }
     },
     mostrarCasillasPorVencer() {
@@ -1391,19 +1477,25 @@ export default {
         case 2: return 'Con Correspondencia';
         case 3: return 'Mantenimiento';
         case 4: return 'Vencido';
+        case 5: return 'Reservado';
         default: return 'Ocupado';
       }
     },
   },
   mounted() {
     this.$nextTick(async () => {
+
       try {
+
         await Promise.all([this.GET_DATA(this.apiUrl)]).then((v) => {
           this.list = v[0].filter(item => item.estado === 1);
           this.casillasOcupadas = this.list.map((item) => item.casilla.nombre);
           this.filteredList = this.list;
         });
         this.generarAlertaCasillasPorVencer();
+        let user = localStorage.getItem('userAuth'); // Asignar cajero_id al modelo
+        this.user = JSON.parse(user); // Asignar cajero_id al modelo
+        this.model.cajero_id = this.user.cajero.id; // Asignar cajero_id al modelo
       } catch (e) {
         console.log(e);
       } finally {
@@ -1434,5 +1526,80 @@ export default {
 .pagination .page-number.active {
   font-weight: bold;
   text-decoration: underline;
+}
+
+.status-table {
+  width: auto;
+  font-size: 0.7rem;
+  /* Hacemos la tabla más pequeña */
+}
+
+.status-table td {
+  padding: 3px 5px;
+  /* Reducimos el padding para hacer la tabla más compacta */
+  text-align: center;
+}
+
+.status-red {
+  background-color: red;
+  color: white;
+}
+
+.status-orange {
+  background-color: orange;
+  color: black;
+}
+
+.status-black {
+  background-color: black;
+  color: white;
+}
+
+.status-green {
+  background-color: green;
+  color: black;
+}
+
+.status-yellow {
+  background-color: yellow;
+  color: black;
+}
+
+.dropdown-custom {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 8px 10px;
+  /* Reducimos el tamaño del botón */
+  font-size: 14px;
+  /* Reducimos el tamaño de la fuente */
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  /* Borde redondeado */
+}
+
+.dropdown-button:hover {
+  background-color: #3e8e41;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 200px;
+  /* Ajustamos el ancho mínimo */
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 5px;
+  /* Borde redondeado */
+}
+
+.dropdown-custom .dropdown-content {
+  display: block;
 }
 </style>

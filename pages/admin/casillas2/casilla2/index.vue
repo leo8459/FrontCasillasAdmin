@@ -3,6 +3,7 @@
     <JcLoader :load="load"></JcLoader>
     <AdminTemplate :page="page" :modulo="modulo">
       <div slot="body">
+
         <div class="row justify-content-end text-right">
           <div class="col-12 col-md-4">
             <label for="searchInput">Buscar por nombre:</label>
@@ -13,46 +14,23 @@
               </li>
             </ul>
           </div>
+
         </div>
+
         <div class="col-2">
           <label for="seccionSelector">Selecciona una sección:</label>
           <select v-model="seccionSeleccionada" id="seccionSelector" @change="cargarDatos">
-            <option value="1">Sección 1</option>
-            <option value="2">Sección 2</option>
-            <option value="3">Sección 3</option>
-            <option value="4">Sección 4</option>
-            <option value="5">Sección 5</option>
-            <option value="6">Sección 6</option>
-            <option value="7">Sección 7</option>
-            <option value="8">Sección 8</option>
-            <option value="9">Sección 9</option>
-            <option value="10">Sección 10</option>
-            <option value="11">Sección 11</option>
-            <option value="12">Sección 12</option>
-            <option value="13">Sección 13</option>
-            <option value="14">Sección 14</option>
-            <option value="15">Sección 15</option>
-            <option value="16">Sección 16</option>
-            <option value="17">Sección 17</option>
-            <option value="18">Sección 18</option>
-            <option value="19">Sección 19</option>
-            <option value="20">Sección 20</option>
-            <option value="21">Sección 21</option>
-            <option value="22">Sección 22</option>
-            <option value="23">Sección 23</option>
-            <option value="24">Sección 24</option>
-            <option value="25">Sección 25</option>
-            <option value="26">Sección 26</option>
-            <option value="27">Sección 27</option>
-            <option value="28">Sección 28</option>
-            <option value="29">Sección 29</option>
-            <option value="30">Sección 30</option>
-            <!-- Agrega más opciones según tus necesidades -->
+            <option v-for="n in 45" :value="n">Sección {{ n }}</option>
           </select>
-
         </div>
-
-
+        <div class="col-12 col-md-4 mt-2 d-flex justify-content-start">
+          <div class="status-container">
+            <div class="status-item" v-for="status in estadosCasillas" :key="status.color">
+              <span>{{ status.nombre }}</span>
+              <div :class="['status-square', status.colorClass]"></div>
+            </div>
+          </div>
+        </div>
         <!-- Subdividir por categoría -->
         <div v-for="categoria in categorias" :key="categoria.id">
           <div class="text-center mb-4">
@@ -60,11 +38,11 @@
           </div>
           <div class="d-flex justify-content-center align-items-center">
             <div class="row mt-4">
-              <div class="d-flex flex-wrap justify-content-center">
-                <div v-for="(item, index) in casillasOrdenadasPorCategoria(categoria.id)" :key="item.id" class="m-2"
-                  :style="{
+              <div class="d-flex flex-wrap justify-content-center casillas-container">
+                <div v-for="(item, index) in casillasOrdenadasPorCategoria(categoria.id)" :key="item.id"
+                  :class="{ 'small-casilla': item.categoria_nombre === 'Pequeño' }" class="m-2" :style="{
                     fontSize: '2rem',
-                    width: 'calc(160px - 5px)',
+                    width: isMediana(item.categoria_nombre) ? 'calc(20% - 10px)' : 'calc(110px - 5px)', // Ajusta el ancho dependiendo de si es mediana o no
                     transform: getIconSize(item.categoria_nombre),
                   }">
                   <div :class="['circle-icon', getIconColorClass(item.casilla_estado)]">
@@ -93,6 +71,7 @@
           </div>
           <div class="modal-body">
             <p>Numero de Casilla: {{ casillaSeleccionada.casilla_nombre }}</p>
+            <p>Seccion: {{ casillaSeleccionada.seccione_id }}</p>
             <p>Categoría: {{ casillaSeleccionada.categoria_nombre }}</p>
             <p>Estado: {{ getTextForEstado(casillaSeleccionada.casilla_estado) }}</p>
             <p>Observacion: {{ casillaSeleccionada.casilla_observacion }}</p>
@@ -100,9 +79,6 @@
             <p>Carnet: {{ casillaSeleccionada.carnet }}</p>
           </div>
           <div class="modal-footer">
-            <!-- Condición para mostrar el botón solo si el estado no es 'Ocupado' -->
-
-
             <nuxt-link
               v-if="casillaSeleccionada.casilla_estado !== 0 && casillaSeleccionada.casilla_estado !== 2 && casillaSeleccionada.casilla_estado !== 3"
               :to="`${url_nuevo}?casillaId=${casillaSeleccionada.casilla_id}`" class="btn btn-dark btn-sm w-30">
@@ -113,23 +89,16 @@
               Estado
             </nuxtLink>
 
-
-
-
             <nuxt-link v-if="casillaSeleccionada.casilla_estado !== 1"
               :to="`${url_editar2}${casillaSeleccionada.alquiler_id}`" class="btn btn-info btn-sm py-2 px-4">
               <i class="fas fa-plus"></i> Renovar
             </nuxt-link>
 
-
-
             <button type="button" class="btn btn-secondary" @click="cerrarModal">Cerrar</button>
-
           </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -138,156 +107,133 @@ export default {
   name: "IndexPage",
   data() {
     return {
+      dropdownVisible: false,
       load: true,
       casillas: [],
-      apiUrl: 'ver1', // La ruta base
+      apiUrl: 'ver1',
       page: 'Casillas',
-      modulo: 'agbc',
-      seccionSeleccionada: "1", // Valor por defecto
+      modulo: 'AGBC',
+      seccionSeleccionada: "1",
       url_nuevo: '/admin/alquileres/alquilere/nuevo',
       url_editar: '/admin/casillas/casilla/estado/',
       url_editar2: '/admin/alquileres/alquilere/renovar/',
-      url_editar3: '/admin/casillas/casilla/img/',
-
       modalVisible: false,
       casillaSeleccionada: {},
-      busqueda: '', // Nuevo campo para almacenar el valor de búsqueda
-
+      busqueda: '',
+      mostrarListaOpciones: false,
+      opcionesBusqueda: [],
+      estadosCasillas: [
+        { colorClass: 'status-red', nombre: 'Mantenimiento' },
+        { colorClass: 'status-orange', nombre: 'Con Correspondencia' },
+        { colorClass: 'status-black', nombre: 'Ocupado' },
+        { colorClass: 'status-green', nombre: 'Libre' },
+        { colorClass: 'status-yellow', nombre: 'Vencido' }
+      ],
     };
   },
   computed: {
     categorias() {
-      // Obtener la lista única de categorías
       const categoriasUnicas = [...new Set(this.casillas.map((item) => item.categoria_nombre))];
-      // Mapear las categorías a un objeto con un ID y nombre
       return categoriasUnicas.map((nombre, index) => ({ id: index + 1, nombre }));
     },
     casillasOrdenadas() {
-      // Ordenar las casillas por el nombre de la categoría en orden inverso
       return this.casillas.slice().sort((a, b) => b.categoria_nombre.localeCompare(a.categoria_nombre));
     },
   },
   methods: {
-
-
+    toggleDropdown() {
+      this.dropdownVisible = !this.dropdownVisible;
+    },
+    isMediana(categoria) {
+      return categoria === 'Mediana';
+    },
     abrirElemento(id) {
-      // Encuentra el elemento correspondiente por su ID
       const elemento = this.casillas.find(item => item.casilla_id === id);
       if (elemento) {
-        // Aquí puedes realizar alguna acción, por ejemplo, abrir un modal con los detalles del elemento
         this.abrirModal(elemento);
-        // También puedes navegar a otra página con los detalles del elemento si lo prefieres
-        // this.$router.push(`/detalle/${id}`);
       } else {
         console.error('No se encontró el elemento correspondiente.');
       }
     },
-
-
     filtrarOpcionesBusqueda() {
-  if (this.busqueda.trim() === '') {
-    this.mostrarListaOpciones = false;
-    return;
-  }
-
-  const busquedaLowerCase = this.busqueda.toLowerCase().trim();
-  this.opcionesBusqueda = this.casillas
-    .filter(item => (
-      (item.casilla_nombre && item.casilla_nombre.toLowerCase().includes(busquedaLowerCase)) ||
-      (item.cliente_nombre && item.cliente_nombre.toLowerCase().includes(busquedaLowerCase)) ||
-      (item.carnet && item.carnet.toLowerCase().includes(busquedaLowerCase))
-    ))
-    .map(item => ({
-      id: item.casilla_id, // Ajusta el ID según tus necesidades
-      nombre: `${item.casilla_nombre} - ${item.cliente_nombre}`, // Ajusta el texto según tus necesidades
-    }));
-
-  this.mostrarListaOpciones = true;
-},
-
-
-
-    abrirImagen(imagen) {
-    const rutaImagen = `/assets/imagenes/${imagen}`;
-    window.open(rutaImagen, '_self'); // Cambia '_blank' por '_self' si quieres que se abra en la misma ventana.
-  },
-
-  // Asumamos que añades un método que se llame al hacer clic en tu botón
-  handleButtonClick(casillaId) {
-    if (casillaId === 5 || casillaId === 7) {
-      this.abrirImagen('seccion.jpg');
-    } else {
-      // Para el caso general, abre la imagen "logo.png"
-      this.abrirImagen('seccion.jpg');
-    }
-  },
-
-
-  buscarCasilla(event) {
-  if (event.key === 'Enter') {
-    const busquedaLowerCase = this.busqueda.toLowerCase().trim();
-    if (busquedaLowerCase === '') {
-      // Si la búsqueda está vacía, restaura la lista completa de casillas
-      this.cargarDatos();
-    } else {
-      const casillasFiltradas = this.casillas.filter(item => {
-        // Filtrar las casillas por casilla_nombre, cliente_nombre o carnet que no sean null y que contengan el texto de búsqueda
-        return (
+      if (this.busqueda.trim() === '') {
+        this.mostrarListaOpciones = false;
+        return;
+      }
+      const busquedaLowerCase = this.busqueda.toLowerCase().trim();
+      this.opcionesBusqueda = this.casillas
+        .filter(item => (
           (item.casilla_nombre && item.casilla_nombre.toLowerCase().includes(busquedaLowerCase)) ||
           (item.cliente_nombre && item.cliente_nombre.toLowerCase().includes(busquedaLowerCase)) ||
           (item.carnet && item.carnet.toLowerCase().includes(busquedaLowerCase))
-        );
-      });
-
-      if (casillasFiltradas.length > 0) {
-        // Si se encuentran casillas que coinciden, muestra todas las coincidencias
-        this.mostrarCasillasFiltradas(casillasFiltradas);
-      } else {
-        // Si no se encuentra ninguna coincidencia, mostrar un mensaje o realizar alguna acción según necesites
-        console.log('No se encontró ninguna casilla con ese nombre o cliente.');
-      }
-    }
-  }
-},
-
-mostrarCasillasFiltradas(casillasFiltradas) {
-  // Muestra las casillas filtradas
-  this.modalVisible = true;
-  this.casillaSeleccionada = casillasFiltradas[0] || null; // Establece la primera casilla filtrada o null si no hay coincidencias
-  this.casillas = casillasFiltradas;
-},
-
-
-
-
-
-    casillasOrdenadasPorCategoria(categoriaId) {
-      // Filtrar las casillas por la categoría actual
-      return this.casillas
-        .filter((item) => item.categoria_nombre === this.categorias[categoriaId - 1].nombre)
-        .sort((a, b) => b.categoria_nombre.localeCompare(a.categoria_nombre));
+        ))
+        .map(item => ({
+          id: item.casilla_id,
+          nombre: `${item.casilla_nombre} - ${item.cliente_nombre}`,
+        }));
+      this.mostrarListaOpciones = true;
     },
-
+    abrirImagen(imagen) {
+      const rutaImagen = `/assets/imagenes/${imagen}`;
+      window.open(rutaImagen, '_self');
+    },
+    handleButtonClick(casillaId) {
+      if (casillaId === 5 || casillaId === 7) {
+        this.abrirImagen('seccion.jpg');
+      } else {
+        this.abrirImagen('seccion.jpg');
+      }
+    },
+    buscarCasilla(event) {
+      if (event.key === 'Enter') {
+        const busquedaLowerCase = this.busqueda.toLowerCase().trim();
+        if (busquedaLowerCase === '') {
+          this.cargarDatos();
+        } else {
+          const casillasFiltradas = this.casillas.filter(item => {
+            return (
+              (item.casilla_nombre && item.casilla_nombre.toLowerCase().includes(busquedaLowerCase)) ||
+              (item.cliente_nombre && item.cliente_nombre.toLowerCase().includes(busquedaLowerCase)) ||
+              (item.carnet && item.carnet.toLowerCase().includes(busquedaLowerCase))
+            );
+          });
+          if (casillasFiltradas.length > 0) {
+            this.mostrarCasillasFiltradas(casillasFiltradas);
+          } else {
+            console.log('No se encontró ninguna casilla con ese nombre o cliente.');
+          }
+        }
+      }
+    },
+    mostrarCasillasFiltradas(casillasFiltradas) {
+      this.modalVisible = true;
+      this.casillaSeleccionada = casillasFiltradas[0] || null;
+      this.casillas = casillasFiltradas;
+    },
+    casillasOrdenadasPorCategoria(categoriaId) {
+      const casillasCategoria = this.casillas.filter((item) => item.categoria_nombre === this.categorias[categoriaId - 1].nombre);
+      return casillasCategoria.sort((a, b) => parseInt(a.casilla_nombre) - parseInt(b.casilla_nombre));
+    },
     async cargarDatos() {
       try {
         const res = await this.$api.$get(`${this.apiUrl}/${this.seccionSeleccionada}`);
         console.log('Datos recuperados de la API:', res);
-
-        // Verifica que la respuesta tenga la propiedad 'casillas' y es un array
         if (res && Array.isArray(res.casillas)) {
-          // Asigna las casillas recuperadas al arreglo 'casillas' del componente
           this.casillas = res.casillas;
+          this.casillas.sort((b, a) => {
+            const categoriaComparison = a.categoria_nombre.localeCompare(b.categoria_nombre);
+            if (categoriaComparison !== 0) return categoriaComparison;
+            return parseInt(a.casilla_nombre) - parseInt(b.casilla_nombre);
+          });
         } else {
           console.error('La respuesta de la API no contiene el formato esperado.');
         }
-
       } catch (error) {
         console.error('Error al recuperar los datos de la API:', error);
       } finally {
         this.load = false;
       }
     },
-
     abrirModal(item) {
       this.casillaSeleccionada = item;
       this.modalVisible = true;
@@ -298,15 +244,15 @@ mostrarCasillasFiltradas(casillasFiltradas) {
     getIconColorClass(estado) {
       switch (estado) {
         case 1:
-          return 'text-success'; // Estado "Disponible"
+          return 'text-success';
         case 2:
-          return 'text-brown'; // Estado "Lleno" (nuevo color café)
+          return 'text-brown';
         case 3:
-          return 'text-danger'; // Estado "Lleno" (nuevo color café)
-          case 4:
-          return 'text-warning'; // Estado "Vencido" (nuevo color amarillo)
+          return 'text-danger';
+        case 4:
+          return 'text-warning';
         default:
-          return 'text-black'; // Otros estados
+          return 'text-black';
       }
     },
     getIconSize(categoria) {
@@ -344,11 +290,11 @@ mostrarCasillasFiltradas(casillasFiltradas) {
         case 1:
           return 'Libre';
         case 2:
-          return 'Lleno';
+          return 'Con Correspondecia';
         case 3:
           return 'Mantenimiento';
-          case 4:
-          return 'Vencido'; // Nuevo estado "Vencido"
+        case 4:
+          return 'Vencido';
         default:
           return 'Desconocido';
       }
@@ -361,9 +307,6 @@ mostrarCasillasFiltradas(casillasFiltradas) {
 </script>
 
 <style scoped>
-
-
-
 ul {
   list-style: none;
   padding: 0;
@@ -371,54 +314,27 @@ ul {
   position: absolute;
   background-color: #ffffff;
   border: 1px solid #ccc;
-  max-height: 150px; /* Establece una altura máxima para la lista */
-  overflow-y: auto; /* Agrega desplazamiento vertical si la lista excede la altura máxima */
+  max-height: 150px;
+  overflow-y: auto;
 }
 
 ul li {
   padding: 5px 10px;
   cursor: pointer;
 }
-
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  position: absolute;
-  background-color: #ffffff;
-  border: 1px solid #ccc;
-}
-
-ul li {
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-ul li:hover {
-  background-color: #f0f0f0;
-}
-
 
 .label-container {
   position: absolute;
   top: 10px;
-  /* Ajusta la posición vertical según tus necesidades */
   right: 1000px;
-  /* Ajusta la posición horizontal según tus necesidades */
   background-color: #f0f0f0;
-  /* Ajusta el color de fondo según tus preferencias */
   padding: 5px;
-  /* Ajusta el espaciado interior según tus preferencias */
   border: 1px solid #ccc;
-  /* Ajusta los bordes según tus preferencias */
   border-radius: 5px;
-  /* Añade bordes redondeados si lo deseas */
 }
 
 .label-text {
   font-size: 10px;
-  /* Ajusta el tamaño de fuente según tus preferencias */
 }
 
 .circle-icon {
@@ -449,8 +365,186 @@ p {
 .casilla-nombre {
   font-size: 1rem;
 }
-/* Tu código CSS existente */
-.text-warning {
-  color: yellow; /* Color amarillo para el estado "Vencido" */
+
+.elemento {
+  float: right;
+  width: calc(16% - 10px);
+}
+
+.casillas-container {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: calc(10 * (110px - 5px));
+  /* Ajusta 110px según el ancho calculado de las casillas */
+}
+
+.small-casilla {
+  width: calc(12.5% - 5px);
+  /* 100% / 8 = 12.5% */
+}
+
+.status-table {
+  width: auto;
+  font-size: 0.7rem;
+  /* Hacemos la tabla más pequeña */
+}
+
+.status-table td {
+  padding: 3px 5px;
+  /* Reducimos el padding para hacer la tabla más compacta */
+  text-align: center;
+}
+
+.status-red {
+  background-color: red;
+  color: white;
+}
+
+.status-orange {
+  background-color: orange;
+  color: black;
+}
+
+.status-black {
+  background-color: black;
+  color: white;
+}
+
+.status-green {
+  background-color: green;
+  color: black;
+}
+
+.status-yellow {
+  background-color: yellow;
+  color: black;
+}
+
+.dropdown-custom {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 8px 10px;
+  /* Reducimos el tamaño del botón */
+  font-size: 14px;
+  /* Reducimos el tamaño de la fuente */
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  /* Borde redondeado */
+}
+
+.dropdown-button:hover {
+  background-color: #3e8e41;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 200px;
+  /* Ajustamos el ancho mínimo */
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 5px;
+  /* Borde redondeado */
+}
+
+.dropdown-custom .dropdown-content {
+  display: block;
+}
+
+.status-red {
+  background-color: red;
+  color: white;
+  width: 30px;
+  /* Aumentar el tamaño del cuadro */
+  height: 30px;
+  /* Aumentar el tamaño del cuadro */
+  display: inline-block;
+  margin-left: 5px;
+  border: 1px solid #000;
+  /* Borde alrededor del cuadro */
+}
+
+.status-orange {
+  background-color: orange;
+  color: black;
+  width: 30px;
+  /* Aumentar el tamaño del cuadro */
+  height: 30px;
+  /* Aumentar el tamaño del cuadro */
+  display: inline-block;
+  margin-left: 5px;
+  border: 1px solid #000;
+  /* Borde alrededor del cuadro */
+}
+
+.status-black {
+  background-color: black;
+  color: white;
+  width: 30px;
+  /* Aumentar el tamaño del cuadro */
+  height: 30px;
+  /* Aumentar el tamaño del cuadro */
+  display: inline-block;
+  margin-left: 5px;
+  border: 1px solid #000;
+  /* Borde alrededor del cuadro */
+}
+
+.status-green {
+  background-color: green;
+  color: black;
+  width: 30px;
+  /* Aumentar el tamaño del cuadro */
+  height: 30px;
+  /* Aumentar el tamaño del cuadro */
+  display: inline-block;
+  margin-left: 5px;
+  border: 1px solid #000;
+  /* Borde alrededor del cuadro */
+}
+
+.status-yellow {
+  background-color: yellow;
+  color: black;
+  width: 30px;
+  /* Aumentar el tamaño del cuadro */
+  height: 30px;
+  /* Aumentar el tamaño del cuadro */
+  display: inline-block;
+  margin-left: 5px;
+  border: 1px solid #000;
+  /* Borde alrededor del cuadro */
+}
+
+.status-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  /* Borde alrededor de cada ítem */
+  padding: 5px;
+  /* Espacio alrededor del contenido del ítem */
+  border-radius: 5px;
+  /* Borde redondeado */
+}
+
+.status-item span {
+  margin-right: 5px;
+  /* Espacio entre el texto y el cuadro */
+  font-size: 12px;
+  /* Tamaño de la fuente para el texto */
 }
 </style>

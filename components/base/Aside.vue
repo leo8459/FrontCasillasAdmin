@@ -130,13 +130,24 @@
                  <li class="nav-item">
                    <nuxtLink
                      class="nav-link"
-                     to="/admin/precios/precio"
+                     to="/admin/alquileres2d/alquilere2d"
                    >
-                     <span class="sidenav-mini-icon"> reportes </span>
-                     <span class="sidenav-normal"> reportes </span>
+                     <span class="sidenav-mini-icon"> Mapa 2D </span>
+                     <span class="sidenav-normal"> Mapa 2D </span>
                    </nuxtLink>
                  </li>
-              
+                 <li class="nav-item">
+                <nuxtLink class="nav-link" to="/admin/reservas/reserva">
+                  <span class="sidenav-mini-icon"> Reservar </span>
+                  <span class="sidenav-normal"> Reservar </span>
+                </nuxtLink>
+              </li>
+              <li class="nav-item">
+                <nuxtLink class="nav-link" to="/admin/reservascajero">
+                  <span class="sidenav-mini-icon"> Reservas Vigentes </span>
+                  <span class="sidenav-normal"> Reservas Vigentes </span>
+                </nuxtLink>
+              </li>
                </ul>
              </div>
              

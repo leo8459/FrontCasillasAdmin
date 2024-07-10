@@ -14,17 +14,26 @@
                 <CrudCreate :model="model" :apiUrl="apiUrl">
                   <div slot="body" class="row">
                     <!-- Nuevo campo de entrada para el cliente con funcionalidad de búsqueda -->
+                   
                     <div class="form-group col-12">
-                      <label for="">Cliente</label>
-                      <input type="text" v-model="searchQuery" @input="searchClients"
-                        @keyup.enter="autocompleteFirstResult" class="form-control" id="">
-                      <!-- Mostrar coincidencias debajo del campo de búsqueda -->
-                      <div v-if="searchResults.length" class="search-results">
-                        <ul>
-                          <li v-for="client in searchResults" @click="selectClient(client)"
-                            @mouseover="highlightClient(client)">{{ client.nombre }}</li>
-                        </ul>
-                      </div>
+                      <label for="">Nombre</label>
+                      <input type="text" v-model="model.nombre" class="form-control" id="">
+                    </div>
+                    <div class="form-group col-12">
+                      <label for="">Email</label>
+                      <input type="text" v-model="model.email" class="form-control" id="">
+                    </div>
+                    <div class="form-group col-12">
+                      <label for="">Carnet</label>
+                      <input type="text" v-model="model.carnet" class="form-control" id="">
+                    </div>
+                    <div class="form-group col-12">
+                      <label for="">Direccion</label>
+                      <input type="text" v-model="model.direccion" class="form-control" id="">
+                    </div>
+                    <div class="form-group col-12">
+                      <label for="">Telefono</label>
+                      <input type="text" v-model="model.telefono" class="form-control" id="">
                     </div>
 
                     <div class="form-group col-12">
@@ -35,54 +44,10 @@
                       </select>
                     </div>
 
-                    <div class="form-group col-12">
-                      <label for="">Tamaño</label>
-                      <select name="" id="" class="form-control" v-model="model.categoria_id" @change="updateCategoria">
-                        <option v-for="m in categorias" :value="m.id">{{ m.nombre }}</option>
-                      </select>
-                    </div>
-                    <div class="form-group col-12">
-                      <label for="">Fecha inicial</label>
-                      <input type="date" v-model="model.ini_fecha" class="form-control" :min="minFecha">
-                    </div>
-
-                    <div class="form-group col-12">
-                      <label for="">Tiempo</label>
-                      <select name="" id="" class="form-control" v-model="model.precio_id">
-                        <option v-for="m in precios" :value="m.id">{{ m.tiempo }}</option>
-                      </select>
-                    </div>
-
-                    <div class="form-group col-12">
-                      <label for="">Fecha final</label>
-                      <input type="date" v-model="model.fin_fecha" class="form-control" :min="model.ini_fecha" >
-                    </div>
-
-                    <div class="form-group col-12">
-                      <label for="">Llaves Extras</label>
-                      <input type="text" v-model="model.estado_pago" class="form-control" id="">
-                    </div>
-
-                    <div class="form-group col-12">
-                      <label for="">Multas</label>
-                      <input type="text" v-model="model.nombre" class="form-control" id="">
-                    </div>
+                   
                     
-                    <div class="form-group col-12">
-                      <label for="">Apertura</label>
-                      <input type="date" v-model="model.apertura" class="form-control" :min="apertura" >
-                    </div>
-                    <div class="form-group col-12">
-                      <label for="">Habilitacion</label>
-                      <input type="text" v-model="model.habilitacion" class="form-control" id="">
-                    </div>
-
-                    <div class="form-group col-12">
-                      <label for="">precio</label>
-                      <select name="" id="" class="form-control" v-model="model.precio_id" >
-                        <option v-for="m in precios" :value="m.id">{{ m.precio }}</option>
-                      </select>
-                    </div>
+                   
+          
                   </div>
                 </CrudCreate>
               </div>
@@ -100,31 +65,19 @@ export default {
     return {
       model: {
         nombre: '',
-        cliente_id: '',
+        email: '',
+        carnet: '',
+        direccion: '',
+        telefono: '',
         casilla_id: '',
-        categoria_id: '',
-        precio_id: '',
-        estado_pago: '',
-        ini_fecha: '',
-        fin_fecha: '',
-        apertura: '',
-        habilitacion: '',
-        estado: '',
-        cajero_id: '', // Asignar cajero_id al modelo
       },
-      apiUrl: 'alquileres',
+      apiUrl: 'reservas',
       page: 'alquileres',
       modulo: 'AGBC',
       load: true,
       searchQuery: '', // Añade esta línea
       searchResults: [], // Añade esta línea
-      clientes: [],
       casillas: [],
-      categorias: [],
-      precios: [],
-      user: { // Asignar cajero_id al modelo
-        cajero: [] // LLAMAR DATO DEL CAJERO
-      }, // Asignar cajero_id al modelo
     };
   },
 
