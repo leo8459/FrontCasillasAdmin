@@ -211,9 +211,6 @@ export default {
   },
   mounted() {
     this.$nextTick(async () => {
-      let user = localStorage.getItem('userAuth'); // Asignar cajero_id al modelo
-      this.user = JSON.parse(user); // Asignar cajero_id al modelo
-      this.model.cajero_id = this.user.cajero.id; // Asignar cajero_id al modelo
       
       const today = new Date();
       const year = today.getFullYear();

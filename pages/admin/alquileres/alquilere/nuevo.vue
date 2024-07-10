@@ -55,7 +55,7 @@
 
                     <div class="form-group col-12">
                       <label for="">Fecha final</label>
-                      <input type="date" v-model="model.fin_fecha" class="form-control" :min="model.ini_fecha" >
+                      <input type="date" v-model="model.fin_fecha" class="form-control" :min="model.ini_fecha">
                     </div>
 
                     <div class="form-group col-12">
@@ -70,7 +70,7 @@
                     
                     <div class="form-group col-12">
                       <label for="">Apertura</label>
-                      <input type="date" v-model="model.apertura" class="form-control" :min="apertura" >
+                      <input type="date" v-model="model.apertura" class="form-control" :min="apertura">
                     </div>
                     <div class="form-group col-12">
                       <label for="">Habilitacion</label>
@@ -78,8 +78,8 @@
                     </div>
 
                     <div class="form-group col-12">
-                      <label for="">precio</label>
-                      <select name="" id="" class="form-control" v-model="model.precio_id" >
+                      <label for="">Precio</label>
+                      <select name="" id="" class="form-control" v-model="model.precio_id">
                         <option v-for="m in precios" :value="m.id">{{ m.precio }}</option>
                       </select>
                     </div>
@@ -116,15 +116,13 @@ export default {
       page: 'alquileres',
       modulo: 'AGBC',
       load: true,
-      searchQuery: '', // Añade esta línea
-      searchResults: [], // Añade esta línea
+      searchQuery: '',
+      searchResults: [],
       clientes: [],
       casillas: [],
       categorias: [],
       precios: [],
-      user: { // Asignar cajero_id al modelo
-        cajero: [] // LLAMAR DATO DEL CAJERO
-      }, // Asignar cajero_id al modelo
+      apertura: '', // Añade esta línea para que la propiedad apertura sea reactiva
     };
   },
 
@@ -258,10 +256,6 @@ export default {
   },
   mounted() {
     this.$nextTick(async () => {
-      let user = localStorage.getItem('userAuth'); // Asignar cajero_id al modelo
-      this.user = JSON.parse(user); // Asignar cajero_id al modelo
-      this.model.cajero_id = this.user.cajero.id; // Asignar cajero_id al modelo
-      
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -269,6 +263,7 @@ export default {
       const formattedDate = `${year}-${month}-${day}`;
 
       this.model.apertura = formattedDate; // Asignar la fecha actual a la apertura
+      this.apertura = formattedDate; // Asignar la fecha actual a la propiedad apertura
 
       try {
         await Promise.all([this.GET_DATA('clientes'), this.GET_DATA('casillas'), this.GET_DATA('categorias'), this.GET_DATA('precios')]).then((v) => {

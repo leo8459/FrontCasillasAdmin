@@ -148,13 +148,13 @@ export default {
       return categoria === 'Mediana';
     },
     abrirElemento(id) {
-      const elemento = this.casillas.find(item => item.casilla_id === id);
-      if (elemento) {
-        this.abrirModal(elemento);
-      } else {
-        console.error('No se encontró el elemento correspondiente.');
-      }
-    },
+    const elemento = this.casillas.find(item => item.casilla_id === id);
+    if (elemento) {
+      this.abrirModal(elemento);
+    } else {
+      console.error('No se encontró el elemento correspondiente.');
+    }
+  },
     filtrarOpcionesBusqueda() {
       if (this.busqueda.trim() === '') {
         this.mostrarListaOpciones = false;
@@ -215,25 +215,24 @@ export default {
       return casillasCategoria.sort((a, b) => parseInt(a.casilla_nombre) - parseInt(b.casilla_nombre));
     },
     async cargarDatos() {
-      try {
-        const res = await this.$api.$get(`${this.apiUrl}/${this.seccionSeleccionada}`);
-        console.log('Datos recuperados de la API:', res);
-        if (res && Array.isArray(res.casillas)) {
-          this.casillas = res.casillas;
-          this.casillas.sort((b, a) => {
-            const categoriaComparison = a.categoria_nombre.localeCompare(b.categoria_nombre);
-            if (categoriaComparison !== 0) return categoriaComparison;
-            return parseInt(a.casilla_nombre) - parseInt(b.casilla_nombre);
-          });
-        } else {
-          console.error('La respuesta de la API no contiene el formato esperado.');
-        }
-      } catch (error) {
-        console.error('Error al recuperar los datos de la API:', error);
-      } finally {
-        this.load = false;
+    try {
+      const res = await this.$api.$get(`${this.apiUrl}/${this.seccionSeleccionada}`);
+      if (res && Array.isArray(res.casillas)) {
+        this.casillas = res.casillas;
+        this.casillas.sort((b, a) => {
+          const categoriaComparison = a.categoria_nombre.localeCompare(b.categoria_nombre);
+          if (categoriaComparison !== 0) return categoriaComparison;
+          return parseInt(a.casilla_nombre) - parseInt(b.casilla_nombre);
+        });
+      } else {
+        console.error('La respuesta de la API no contiene el formato esperado.');
       }
-    },
+    } catch (error) {
+      console.error('Error al recuperar los datos de la API:', error);
+    } finally {
+      this.load = false;
+    }
+  },
     abrirModal(item) {
       this.casillaSeleccionada = item;
       this.modalVisible = true;
